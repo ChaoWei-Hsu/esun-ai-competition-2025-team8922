@@ -31,22 +31,17 @@ pip install -r requirements.txt
 請至[ 玉山競賽的官方網站連結 ](https://tbrain.trendmicro.com.tw/Competitions/Details/40)下載，並將 acct_transaction.csv, acct_alert.csv, acct_predict.csv 放入 data 資料夾。
 
 ## 如何執行
-本管線由 main.py 統一調度。
-
-1. 執行完整管線
+1. 執行 $\text{main.py}$
 (包含預處理、訓練、預測)
-
 ```bash
 python main.py
 ```
-
 2. (可選) 跳過已完成的步驟   
 如果您已經有 processed_features_with_interactions.pt 或 best_model.pt，可以使用參數跳過特定階段：
   - 僅執行預測 (假設已完成預處理和訓練):
   ```bash
   python main.py --skip-preprocess --skip-train
   ```
-
   - 僅執行訓練和預測 (假設已完成預處理):
   ```bash
   python main.py --skip-preprocess
