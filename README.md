@@ -20,8 +20,10 @@
 
 ## 安裝與設定
 
-### 步驟 1: 安裝依賴
-建議在虛擬環境中安裝：
+### 步驟 1: 專案設定
+1. 本專案建議使用 Python 3.11。
+2. (建議) 建立一個虛擬環境 (virtual environment 或 conda environment)。
+3. 安裝所有依賴套件：
 ```bash
 pip install -r requirements.txt
 ```
