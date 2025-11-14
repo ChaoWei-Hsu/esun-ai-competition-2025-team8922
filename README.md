@@ -9,14 +9,11 @@
 ├ data \
 │ └ (請將 CSV 檔案放於此處) \
 ├ Preprocess \
-│ ├ Preprocess.py \
-│ └ README.md \
+│ └ Preprocess.py \
 ├ Model \
-│ ├ Model.py \
-│ └ README.md \
+│ └ Model.py \
 ├ Prediction \
-│ ├ Prediction.py \
-│ └ README.md \
+│ └ Prediction.py \
 ├ main.py <- (主執行檔) \
 ├ requirements.txt <- (專案依賴) \
 └ README.md <- (您正在閱讀此檔案)
