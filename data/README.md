@@ -1,57 +1,11 @@
-# AI CUP 2025 玉山人工智慧公開挑戰賽 - Team 8922
+# 資料說明 (Data Directory)
 
-本專案使用圖神經網路 (GraphSAGE) 處理玉山銀行競賽的交易數據，以偵測可疑帳戶。
+本資料夾用於存放玉山 AI 競賽的原始資料集。
+基於檔案過大 (超過 100MB) 與版權因素，原始 `.csv` 檔案**不會**被上傳到 GitHub。
 
-專案透過 `main.py` 協調執行三個主要階段：數據預處理、模型訓練和最終預測。
+## 需要手動放置的檔案
+請至 [玉山競賽官方資料下載頁面]([https://... 您的連結 ...](https://tbrain.trendmicro.com.tw/Competitions/Details/40)) 下載以下三個檔案，並將它們**解壓縮後**放入此 `data` 資料夾：
 
-## 專案結構
-
-├ data \
-│ └ (請將 CSV 檔案放於此處) \
-├ Preprocess \
-│ └ Preprocess.py \
-├ Model \
-│ └ Model.py \
-├ Prediction \
-│ └ Prediction.py \
-├ main.py <- (主執行檔) \
-├ requirements.txt <- (專案依賴) \
-└ README.md <- (您正在閱讀此檔案)
-
-## 安裝與設定
-
-### 步驟 1: 專案設定
-1. 本專案建議使用 Python 3.11。
-2. (建議) 建立一個虛擬環境 (virtual environment 或 conda environment)。
-3. 安裝所有依賴套件：
-```bash
-pip install -r requirements.txt
-```
-
-### 步驟 2: 下載數據
-由於競賽數據無法上傳至 Git，您必須手動下載。
-請至[ 玉山競賽的官方網站連結 ](https://tbrain.trendmicro.com.tw/Competitions/Details/40)下載，並將 acct_transaction.csv, acct_alert.csv, acct_predict.csv 放入 data 資料夾。
-
-## 如何執行
-1. 執行 $\text{main.py}$
-(包含預處理、訓練、預測)
-```bash
-python main.py
-```
-2. (可選) 跳過已完成的步驟   
-如果您已經有 processed_features_with_interactions.pt 或 best_model.pt，可以使用參數跳過特定階段：
-  - 僅執行預測 (假設已完成預處理和訓練):
-  ```bash
-  python main.py --skip-preprocess --skip-train
-  ```
-  - 僅執行訓練和預測 (假設已完成預處理):
-  ```bash
-  python main.py --skip-preprocess
-  ```
-
-## 輸出檔案
-執行 main.py 後，以下檔案將會生成在專案根目錄：
-
-1. processed_features_with_interactions.pt: (由 Preprocess 產出) 包含特徵張量和帳戶索引。
-2. best_model.pt: (由 Model 產出) 儲存了訓練好的 GNN 模型權重。
-3. submission.csv: (由 Prediction 產出) 最終的預測提交檔案。
+1. acct_transaction.csv
+2. acct_alert.csv
+3. acct_predict.csv
