@@ -3,17 +3,17 @@ Trains and evaluates a GraphSAGE model for fraud detection.
 
 This script constitutes Part 2 of the pipeline, focusing on model training.
 It performs the following steps:
-1.  Loads node features (from Part 1) and raw data for graph/labels.
-2.  Prepares a PyTorch Geometric (PyG) `Data` object, including graph
-    structure, features, labels, and train/val/test splits.
-3.  Defines a 3-layer GraphSAGE model with batch normalization and dropout.
-4.  Implements training and testing functions, using a dampened weighted
-    CrossEntropyLoss to handle class imbalance.
-5.  Executes the training loop, tracking validation F1-score for
-    early stopping and model checkpointing.
-6.  Loads the best-performing model and evaluates it on the hold-out
-    test set.
-7.  Generates and displays plots of training metrics (loss, AUC, F1, etc.).
+1.  Loads node features (from Part 1) and raw data for graph/labels.
+2.  Prepares a PyTorch Geometric (PyG) `Data` object, including graph
+    structure, features, labels, and train/val/test splits.
+3.  Defines a 3-layer GraphSAGE model with batch normalization and dropout.
+4.  Implements training and testing functions, using a dampened weighted
+    CrossEntropyLoss to handle class imbalance.
+5.  Executes the training loop, tracking validation F1-score for
+    early stopping and model checkpointing.
+6.  Loads the best-performing model and evaluates it on the hold-out
+    test set.
+7.  Generates and displays plots of training metrics (loss, AUC, F1, etc.).
 """
 
 import torch
@@ -30,7 +30,7 @@ import time
 import matplotlib.pyplot as plt
 
 ### --- 0. Setup and Data Loading ---
-print("--- Part 2: Model Training (Optimized) ---")
+print("--- Part 2: Model Training ---")
 print("Step 0: Setup and Data Loading...")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
@@ -211,18 +211,26 @@ print(f"Dampened positive class weight (sqrt): {dampened_weight:.2f}")
 
 
 # --- Hyperparameters and Initialization ---
-HIDDEN_CHANNELS = 768
-LEARNING_RATE = 5e-3
+HIDDEN_CHANNELS = 128
+LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-5
 EPOCHS = 50000
-EARLY_STOPPING_PATIENCE = 20
+EARLY_STOPPING_PATIENCE = 10
 model = GraphSAGE(in_channels=graph_data.num_node_features, hidden_channels=HIDDEN_CHANNELS, out_channels=2).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 
 # Initialize learning rate scheduler
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5)
 
-history = {'epoch': [], 'loss': [], 'val_auc': [], 'val_recall': [], 'val_precision': [], 'val_f1': []}
+# UPDATED: Initialize history with separate keys for Train and Val
+history = {
+    'epoch': [], 
+    'train_loss': [], 'val_loss': [],
+    'train_auc': [], 'val_auc': [],
+    'train_recall': [], 'val_recall': [],
+    'train_precision': [], 'val_precision': [],
+    'train_f1': [], 'val_f1': []
+}
 best_val_f1 = -1
 best_epoch = 0
 patience_counter = 0
@@ -233,12 +241,37 @@ for epoch in range(1, EPOCHS + 1):
     
     # Validation and logging every 10 epochs
     if epoch % 10 == 0:
+        # Evaluate on Validation set
         val_auc, val_recall, val_precision, val_f1 = test(model, graph_data, graph_data.val_mask)
-        print(f'Epoch: {epoch:04d}, Loss: {loss:.4f}, Val Recall: {val_recall:.4f}, Val Precision: {val_precision:.4f}, Val F1: {val_f1:.4f}, Val AUC: {val_auc:.4f}')
+        
+        # UPDATED: Evaluate on Training set
+        train_auc, train_recall, train_precision, train_f1 = test(model, graph_data, graph_data.train_mask)
+        
+        # UPDATED: Calculate Validation Loss explicitly
+        model.eval()
+        with torch.no_grad():
+            out = model(graph_data.x, graph_data.edge_index)
+            val_loss = loss_fn(out[graph_data.val_mask], graph_data.y[graph_data.val_mask]).item()
+
+        print(f'Epoch: {epoch:04d}, Train Loss: {loss:.4f}, Val Loss: {val_loss:.4f}, '
+              f'Val F1: {val_f1:.4f}, Val AUC: {val_auc:.4f}')
         
         # Store metrics
-        history['epoch'].append(epoch); history['loss'].append(loss); history['val_auc'].append(val_auc)
-        history['val_recall'].append(val_recall); history['val_precision'].append(val_precision); history['val_f1'].append(val_f1)
+        history['epoch'].append(epoch)
+        history['train_loss'].append(loss)
+        history['val_loss'].append(val_loss)
+        
+        history['train_auc'].append(train_auc)
+        history['val_auc'].append(val_auc)
+        
+        history['train_recall'].append(train_recall)
+        history['val_recall'].append(val_recall)
+        
+        history['train_precision'].append(train_precision)
+        history['val_precision'].append(val_precision)
+        
+        history['train_f1'].append(train_f1)
+        history['val_f1'].append(val_f1)
         
         # Adjust learning rate based on validation F1
         scheduler.step(val_f1)
@@ -277,16 +310,41 @@ print(f"F1-Score: {final_f1:.4f}")
 
 
 ### --- 5. Visualization ---
-print("\nStep 5: Visualizing Training Process...")
-fig, ax = plt.subplots(2, 2, figsize=(16, 12)); fig.suptitle('Training and Validation Metrics')
-# Plot Training Loss
-ax[0, 0].plot(history['epoch'], history['loss'], label='Training Loss'); ax[0, 0].set_title('Training Loss'); ax[0, 0].legend(); ax[0, 0].grid(True)
-# Plot Validation AUC
-ax[0, 1].plot(history['epoch'], history['val_auc'], label='Validation AUC', color='orange'); ax[0, 1].set_title('Validation AUC'); ax[0, 1].legend(); ax[0, 1].grid(True)
-# Plot Validation Recall and Precision
-ax[1, 0].plot(history['epoch'], history['val_recall'], label='Validation Recall', color='green'); ax[1, 0].plot(history['epoch'], history['val_precision'], label='Validation Precision', color='red'); ax[1, 0].set_title('Recall & Precision'); ax[1, 0].legend(); ax[1, 0].grid(True)
-# Plot Validation F1-Score
-ax[1, 1].plot(history['epoch'], history['val_f1'], label='Validation F1-Score', color='purple'); ax[1, 1].set_title('Validation F1-Score'); ax[1, 1].legend(); ax[1, 1].grid(True)
+print("\nStep 5: Visualizing Training Process (Train vs Val)...")
+fig, ax = plt.subplots(2, 2, figsize=(16, 12))
+fig.suptitle('Training and Validation Metrics Comparison')
 
-plt.tight_layout(rect=[0, 0.03, 1, 0.95]); plt.show()
+# Plot 1: Loss
+ax[0, 0].plot(history['epoch'], history['train_loss'], label='Training Loss')
+ax[0, 0].plot(history['epoch'], history['val_loss'], label='Validation Loss')
+ax[0, 0].set_title('Loss')
+ax[0, 0].legend()
+ax[0, 0].grid(True)
+
+# Plot 2: AUC
+ax[0, 1].plot(history['epoch'], history['train_auc'], label='Training AUC', color='blue')
+ax[0, 1].plot(history['epoch'], history['val_auc'], label='Validation AUC', color='orange')
+ax[0, 1].set_title('AUC')
+ax[0, 1].legend()
+ax[0, 1].grid(True)
+
+# Plot 3: Recall & Precision
+# Solid line for Training, Dashed for Validation
+ax[1, 0].plot(history['epoch'], history['train_recall'], label='Train Recall', color='green', linestyle='-')
+ax[1, 0].plot(history['epoch'], history['val_recall'], label='Val Recall', color='green', linestyle='--')
+ax[1, 0].plot(history['epoch'], history['train_precision'], label='Train Precision', color='red', linestyle='-')
+ax[1, 0].plot(history['epoch'], history['val_precision'], label='Val Precision', color='red', linestyle='--')
+ax[1, 0].set_title('Recall & Precision')
+ax[1, 0].legend()
+ax[1, 0].grid(True)
+
+# Plot 4: F1-Score
+ax[1, 1].plot(history['epoch'], history['train_f1'], label='Training F1', color='purple', linestyle='-')
+ax[1, 1].plot(history['epoch'], history['val_f1'], label='Validation F1', color='purple', linestyle='--')
+ax[1, 1].set_title('F1-Score')
+ax[1, 1].legend()
+ax[1, 1].grid(True)
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
 print("\n--- Part 2 Completed ---")

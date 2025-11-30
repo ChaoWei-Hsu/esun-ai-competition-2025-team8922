@@ -123,7 +123,7 @@ print(f"Full graph data object reconstructed ({full_graph_data.num_nodes} nodes)
 ### --- 3. Loading Trained Model and Making Predictions ---
 print("\nStep 3: Loading trained model and making predictions...")
 # Hyperparameters must match those used in Part 2
-HIDDEN_CHANNELS = 768 
+HIDDEN_CHANNELS = 128 
 model = GraphSAGE(in_channels=full_graph_data.num_node_features, 
                   hidden_channels=HIDDEN_CHANNELS, 
                   out_channels=2).to(device)
@@ -146,7 +146,7 @@ print("Predictions generated for all nodes in the graph.")
 ### --- 4. Extracting Results and Generating Submission File ---
 print("\nStep 4: Extracting results and generating submission file...")
 
-OPTIMAL_THRESHOLD = 0.4625
+OPTIMAL_THRESHOLD = 0.5
 print(f"Using threshold: {OPTIMAL_THRESHOLD}")
 
 # Get the "class 1" (suspicious) probabilities for all nodes
